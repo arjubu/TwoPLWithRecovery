@@ -7,7 +7,7 @@ public class LinkedList {
     public  LinkedList(){
 
     }
-    public LinkedList insertNodeInLinkedList(LinkedList head, HashTable hashTableData){
+    public LinkedList insertNode(LinkedList head, HashTable hashTableData){
         if(head == null){
             head = new LinkedList(hashTableData);
             return head;
@@ -20,11 +20,11 @@ public class LinkedList {
         return head;
     }
 
-    public LinkedList deleteNodeFromLinkedList(LinkedList head, int trid){
+    public LinkedList deleteNode(LinkedList head, int transactionId){
         if(head == null){
             return head;
         }
-        while (head != null && head.data.transactionId == trid){
+        while (head != null && head.data.transactionId == transactionId){
             head = head.next;
         }
         if(head == null){
@@ -34,7 +34,7 @@ public class LinkedList {
         LinkedList curr = head.next;
 
         while (curr != null){
-            if(curr.data.transactionId == trid){
+            if(curr.data.transactionId == transactionId){
                 prev.next = curr.next;
             }else{
                 prev = curr;

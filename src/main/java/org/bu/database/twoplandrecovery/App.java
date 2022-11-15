@@ -56,11 +56,11 @@ public class App
 
         stableStorageReadWriteManager.writeInDatabaseFile(originalDataValue);
         for (int i=0; i<cycle; i++){
-            generateTransaction();
-            processActiveTransaction();
+            createTransaction();
+            handleActiveTransaction();
         }
     }
-    public void generateTransaction() throws IOException {
+    public void createTransaction() throws IOException {
         double randProbability = generateRandomProbability();
         if(randProbability <= startProbability){
             transactionList.add(new Transaction(transactionCount));
@@ -68,25 +68,25 @@ public class App
             transactionCount = transactionCount + 1;
         }
     }
-    public void processActiveTransaction() throws IOException {
+    public void handleActiveTransaction() throws IOException {
         for(int i = 0; i< transactionList.size(); i++){
             if(transactionList.get(i).status == OperationType.ACTIVE){
                 double randProbability = generateRandomProbability();
 
                 if(randProbability <= writeProbability){
                     int dataId = generateRandomDataId();
-                    processWriteOperation(transactionList.get(i).transactionId, dataId, false);
+                    handleWriteOperation(transactionList.get(i).transactionId, dataId, false);
                     totalReadWrite += 1;
                 } else if (randProbability <= writeProbability + rollbackProbability) {
-                    processCommitOrRollbackOperation(transactionList.get(i).transactionId, OperationType.ROLLBACK);
+                    handleCommitOrRollbackOperation(transactionList.get(i).transactionId, OperationType.ROLLBACK);
                 }else{
                     int dataId = generateRandomDataId();
-                    processReadOperation(transactionList.get(i).transactionId, dataId, false);
+                    handleReadOperation(transactionList.get(i).transactionId, dataId, false);
                     totalReadWrite += 1;
                 }
 
                 if(transactionList.get(i).operationCount == transactionSize){
-                    processCommitOrRollbackOperation(transactionList.get(i).transactionId, OperationType.COMMIT);
+                    handleCommitOrRollbackOperation(transactionList.get(i).transactionId, OperationType.COMMIT);
                 }
                 if( totalReadWrite == 25){
                     stableStorageReadWriteManager.writeInDatabaseFile(originalDataValue);
@@ -94,19 +94,19 @@ public class App
             }else {
                 transactionList.get(i).waitTime += 1;
                 if(transactionList.get(i).status == OperationType.WAITING && transactionList.get(i).waitTime > timeout){
-                    processCommitOrRollbackOperation(transactionList.get(i).transactionId, OperationType.ROLLBACK);
+                    handleCommitOrRollbackOperation(transactionList.get(i).transactionId, OperationType.ROLLBACK);
                 }
             }
         }
     }
 
-    public void doTransaction(int transactionId, int dataId, OperationType lockType, OperationType status, boolean isRollbackOrCommit) throws IOException {
+    public void handleTransaction(int transactionId, int dataId, OperationType lockType, OperationType status, boolean isRollbackOrCommit) throws IOException {
         HashTable hashTableData = new HashTable(transactionId, dataId, lockType, status);
 
         if(isRollbackOrCommit == false){
-            insertNodeInTransactionTableAndDataTable(hashTableData, true);
+            insertIntoTransactionTableAndDataTable(hashTableData, true);
         }
-        insertNodeInTransactionTableAndDataTable(hashTableData,false);
+        insertIntoTransactionTableAndDataTable(hashTableData,false);
 
         if(transactionList.get(transactionId).status != status){
             transactionList.get(transactionId).waitTime = 0;
@@ -125,23 +125,23 @@ public class App
         }
     }
 
-    public void processWriteOperation(int transactionId, int dataId, boolean isRollbackOrCommit) throws IOException {
+    public void handleWriteOperation(int transactionId, int dataId, boolean isRollbackOrCommit) throws IOException {
         LinkedList head = dataHashTable[dataId];
         while (head != null){
             if(head.data.transactionId != transactionId ){
-                doTransaction(transactionId, dataId, OperationType.WRITE, OperationType.WAITING, isRollbackOrCommit);
+                handleTransaction(transactionId, dataId, OperationType.WRITE, OperationType.WAITING, isRollbackOrCommit);
                 return;
             }
             head = head.next;
         }
-        doTransaction(transactionId, dataId, OperationType.WRITE, OperationType.GRANTED, isRollbackOrCommit);
+        handleTransaction(transactionId, dataId, OperationType.WRITE, OperationType.GRANTED, isRollbackOrCommit);
     }
 
-    public void processReadOperation(int transactionId, int dataId, boolean isRollbackOrCommit) throws IOException {
+    public void handleReadOperation(int transactionId, int dataId, boolean isRollbackOrCommit) throws IOException {
         LinkedList head = dataHashTable[dataId];
         while (head  != null){
             if(head.data.status == OperationType.WAITING){
-                doTransaction(transactionId, dataId, OperationType.READ, OperationType.WAITING, isRollbackOrCommit);
+                handleTransaction(transactionId, dataId, OperationType.READ, OperationType.WAITING, isRollbackOrCommit);
                 return;
             }
             head = head.next;
@@ -149,32 +149,32 @@ public class App
         head = dataHashTable[dataId];
         while (head != null){
             if(head.data.transactionId != transactionId && head.data.lockType == OperationType.WRITE){
-                doTransaction(transactionId, dataId, OperationType.READ, OperationType.WAITING, isRollbackOrCommit);
+                handleTransaction(transactionId, dataId, OperationType.READ, OperationType.WAITING, isRollbackOrCommit);
                 return;
             }
             head = head.next;
         }
-        doTransaction(transactionId, dataId, OperationType.READ, OperationType.GRANTED, isRollbackOrCommit);
+        handleTransaction(transactionId, dataId, OperationType.READ, OperationType.GRANTED, isRollbackOrCommit);
     }
 
-    public void processTransactionForRollbackAndCommit() throws IOException {
+    public void handleRollbackAndCommitOperation() throws IOException {
         for (int i=0; i<32; i++){
             LinkedList head = dataHashTable[i];
             dataHashTable[i] = null;
             while (head != null){
                 if(head.data.lockType == OperationType.READ){
-                    processReadOperation(head.data.transactionId, head.data.dataId, true);
+                    handleReadOperation(head.data.transactionId, head.data.dataId, true);
                 }
                 if(head.data.lockType == OperationType.WRITE){
-                    processWriteOperation(head.data.transactionId, head.data.dataId, true);
+                    handleWriteOperation(head.data.transactionId, head.data.dataId, true);
                 }
                 head = head.next;
             }
         }
     }
 
-    public void processCommitOrRollbackOperation(int transactionId, OperationType type) throws IOException {
-        deleteNodeFromTransactionTableAndDataTable(transactionId);
+    public void handleCommitOrRollbackOperation(int transactionId, OperationType type) throws IOException {
+        deleteFromTransactionTableAndDataTable(transactionId);
         transactionList.get(transactionId).status = type;
         if(type == OperationType.ROLLBACK){
             stableStorageReadWriteManager.writeTransactionRollbackInLogFile(transactionId);
@@ -182,24 +182,24 @@ public class App
         if(type == OperationType.COMMIT){
             stableStorageReadWriteManager.writeTransactionCommitInLogFile(transactionId);
         }
-        processTransactionForRollbackAndCommit();
+        handleRollbackAndCommitOperation();
     }
 
-    public void insertNodeInTransactionTableAndDataTable(HashTable hashTableData, boolean transactionTable){
+    public void insertIntoTransactionTableAndDataTable(HashTable hashTableData, boolean transactionTable){
         if(transactionTable){
             int idx = hashTableData.transactionId % PRIME_HASH;
-            transactionHashTable[idx] = linkedList.insertNodeInLinkedList(transactionHashTable[idx],hashTableData);
+            transactionHashTable[idx] = linkedList.insertNode(transactionHashTable[idx],hashTableData);
         }else{
             int idx = hashTableData.dataId;
-            dataHashTable[idx] = linkedList.insertNodeInLinkedList(dataHashTable[idx], hashTableData);
+            dataHashTable[idx] = linkedList.insertNode(dataHashTable[idx], hashTableData);
         }
     }
 
-    public void deleteNodeFromTransactionTableAndDataTable(int transactionId){
+    public void deleteFromTransactionTableAndDataTable(int transactionId){
         int idx = transactionId % PRIME_HASH;
-        transactionHashTable[idx] = linkedList.deleteNodeFromLinkedList(transactionHashTable[idx],transactionId);
+        transactionHashTable[idx] = linkedList.deleteNode(transactionHashTable[idx],transactionId);
         for(int i = 0; i < 32; i++){
-            dataHashTable[i] = linkedList.deleteNodeFromLinkedList(dataHashTable[i], transactionId);
+            dataHashTable[i] = linkedList.deleteNode(dataHashTable[i], transactionId);
         }
     }
 
