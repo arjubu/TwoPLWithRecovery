@@ -8,9 +8,9 @@ import java.io.IOException;
 
 public class StableStorageReadWriteManager {
 
-    public void writeInDatabaseFile(int original_data_value) throws IOException {
+    public void writeInDatabaseFile(int originalDataValue) throws IOException {
         BufferedWriter writer = new BufferedWriter(new FileWriter("database.txt"));
-        writer.write(StringUtils.leftPad(Integer.toBinaryString(original_data_value), 32, '0'));
+        writer.write(StringUtils.leftPad(Integer.toBinaryString(originalDataValue), 32, '0'));
         writer.close();
     }
 
@@ -20,9 +20,9 @@ public class StableStorageReadWriteManager {
         pw.close();
     }
 
-    public void writeTransactionWriteInLogFile(int transactionId, int data_id, int new_val, int old_val) throws IOException {
+    public void writeTransactionWriteInLogFile(int transactionId, int dataId, int newValue, int oldvalue) throws IOException {
         FileWriter pw = new FileWriter("log.csv",true);
-        pw.write(transactionId+","+String.valueOf(data_id)+","+"F"+","+new_val+","+old_val+"\n");
+        pw.write(transactionId+","+dataId+","+"F"+","+newValue+","+oldvalue+"\n");
         pw.close();
     }
 
