@@ -1,43 +1,47 @@
 package org.bu.database.twoplandrecovery;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Transaction {
     int transactionId;
-    int waitingTime;
-    int numberOfOperation;
-    boolean isBlocked;
-    boolean isActive;
-    int maximumNumberOfOperation;
-    List<OperationManager> operationManagers = new ArrayList<>();
+    int waitTime;
+    int operationCount;
+    OperationType status;
 
-    public Transaction(int transactionId, int maximumNumberOfOperation ){
+    public Transaction(int transactionId) {
         this.transactionId = transactionId;
-        this.maximumNumberOfOperation = maximumNumberOfOperation;
-        this.waitingTime = 0;
-        this.numberOfOperation = 0;
-        this.isActive = true;
-        this.isBlocked = false;
+        this.waitTime = 0;
+        this.operationCount = 0;
+        this.status = OperationType.ACTIVE;
     }
 
-    public void addOperation(OperationManager operationManager){
-        operationManagers.add(operationManager);
-        numberOfOperation++;
+    public int getTransactionId() {
+        return transactionId;
     }
 
-    public  void blockOperation(){
-        this.isBlocked = true;
+    public void setTransactionId(int transactionId) {
+        this.transactionId = transactionId;
     }
 
-    public void unblockOperation(){
-        this.isBlocked = false;
-    }
-    public void activateOperation(){
-        this.isActive = true;
-    }
-    public void inActivateOperation(){
-        this.isActive = false;
+    public int getWaitTime() {
+        return waitTime;
     }
 
+    public void setWaitTime(int waitTime) {
+        this.waitTime = waitTime;
+    }
+
+    public int getOperationCount() {
+        return operationCount;
+    }
+
+    public void setOperationCount(int operationCount) {
+        this.operationCount = operationCount;
+    }
+
+    public OperationType getStatus() {
+        return status;
+    }
+
+    public void setStatus(OperationType status) {
+        this.status = status;
+    }
 }

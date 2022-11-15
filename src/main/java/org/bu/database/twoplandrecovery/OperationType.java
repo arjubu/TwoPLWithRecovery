@@ -1,5 +1,5 @@
 package org.bu.database.twoplandrecovery;
 
 public enum OperationType {
-    READ,WRITE,ROLLBACK
+    READ,WRITE,ACTIVE,GRANTED,WAITING,ROLLBACK,COMMIT
 }
